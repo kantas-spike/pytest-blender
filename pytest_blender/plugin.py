@@ -81,6 +81,16 @@ def get_pytest_blender_debug(config):
 
 
 @pytest.hookimpl(tryfirst=True)
+def pytest_load_initial_conftests(early_config, parser, args):
+    # Strip arguments after '--' to prevent Pytest from treating them as 'file_or_dir'.
+    if "--" not in args:
+        return
+
+    idx = args.index("--")
+    del args[idx + 1 :]
+
+
+@pytest.hookimpl(tryfirst=True)
 def pytest_addoption(parser):
     for arg, argdef in OPTIONS.items():
         kwargs = argdef["opts"] if "opts" in argdef else {"default": None}
@@ -169,8 +179,7 @@ def pytest_configure(config):
 
     if pytest_blender_debug:
         sys.stdout.write(
-            "[DEBUG (pytest-blender)] Running blender with:"
-            f" {utils.shlex_join(args)}\n"
+            f"[DEBUG (pytest-blender)] Running blender with: {utils.shlex_join(args)}\n"
         )
 
     with subprocess.Popen(
