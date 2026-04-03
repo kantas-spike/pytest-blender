@@ -40,17 +40,20 @@ def test_blender_cli_args_pass_through_with_separator(tmp_path):
 
     # Create pytest.ini to enable pytest-blender configuration
     ini = rootdir / "pytest.ini"
-    ini.write_text("""
+    ini.write_text(
+        """
 [pytest]
 pytest-blender-debug=true
-""")
+"""
+    )
 
     # Create tests directory and test file
     tests_dir = rootdir / "tests"
     tests_dir.mkdir()
 
     test_file = tests_dir / "test_blender_integration.py"
-    test_file.write_text("""
+    test_file.write_text(
+        """
 def test_blender_env_check(pytestconfig):
     '''
     A simple placeholder test to ensure the session runs.
@@ -58,21 +61,26 @@ def test_blender_env_check(pytestconfig):
     '''
     import os
     assert os.path.exists(__file__)
-""")
+"""
+    )
 
     # Create conftest.py for hook-based validation
     conftest = tests_dir / "conftest.py"
-    conftest.write_text("""
+    conftest.write_text(
+        """
 import pytest
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
     # Stage 1 check: Ensure '--' arguments are filtered out by Pytest.
-    # 'no:pytest-blender' is present only in Stage 2 (inside Blender), so its absence confirms Stage 1.
+    # 'no:pytest-blender' is present only in Stage 2 (inside Blender),
+    # so its absence confirms Stage 1.
     if "no:pytest-blender" not in config.invocation_params.args:
         assert [] == config.option.file_or_dir, \
-            "Expected empty file_or_dir in Stage 1; args after '--' were passed as plugin-specific arguments."
-""")
+            ("Expected empty file_or_dir in Stage 1;"
+            " args after '--' were passed as plugin-specific arguments.")
+"""
+    )
 
     # --- Command Execution ---
     # Construct command with '--' to separate pytest options from Blender arguments
@@ -91,8 +99,6 @@ def pytest_configure(config):
         del env["PWD"]
     env["PWD"] = str(rootdir)
 
-    print(f"Running command: {' '.join(cmd)}")
-
     result = subprocess.run(
         cmd, capture_output=True, text=True, cwd=str(rootdir), env=env
     )
@@ -104,17 +110,12 @@ def pytest_configure(config):
     # --- Assertions ---
 
     # Ensure the process exited successfully (exit code 0)
-    if exit_code != 0:
-        print(f"STDOUT:\n{stdout}")
-        print(f"STDERR:\n{stderr}")
-
     assert exit_code == 0, f"pytest failed to run successfully. STDERR:\\n{stderr}"
 
     # CLI arguments propagate to blender_opts
-    assert "-b --python-use-system-env --python" in stdout, (
-        f"cli arguments propagation failed. STDOUT:\\n{stdout}"
-    )
-    print(stdout, stderr)
+    assert (
+        "-b --python-use-system-env --python" in stdout
+    ), f"cli arguments propagation failed. STDOUT:\\n{stdout}"
 
 
 def test_cli_env_propagation(testing_context):
