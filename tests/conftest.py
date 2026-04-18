@@ -89,7 +89,7 @@ def testing_context():
                 if additional_blender_args is None:
                     additional_blender_args = []
                 else:
-                    additional_blender_args.insert(0, "--")
+                    additional_blender_args = ["--", *additional_blender_args]
 
                 cmd = [
                     *cmd_prefix,
@@ -100,6 +100,7 @@ def testing_context():
                     "--strict-markers",
                     "--strict-config",
                     *additional_pytest_args,
+                    *additional_blender_args,
                 ]
                 with subprocess.Popen(
                     cmd,

@@ -22,6 +22,46 @@ def test_blender_argv():
         assert "argv[2] = --debug" in stdout, stderr
 
 
+def test_blender_cli_args_pass_through_with_separator(testing_context):
+    """
+    Verify that pytest-blender correctly handles CLI arguments passed after the
+    '--' (End of Options) separator.
+
+    Specifically, this test ensures that arguments like '--python-use-system-env',
+    which are intended for Blender, are not mistakenly parsed by Pytest as positional
+    file/directory arguments or unrecognized options when placed after '--'.
+    """
+    files = {
+        "pytest.ini": "[pytest]\npytest-blender-debug=true\n",
+        "tests/test_blender_integration.py": """
+def test_blender_env_check(pytestconfig):
+    import os
+    assert os.path.exists(__file__)
+""",
+        "tests/conftest.py": """
+import pytest
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    if "no:pytest-blender" not in config.invocation_params.args:
+        assert [] == config.option.file_or_dir, (
+            "Expected empty file_or_dir in Stage 1;"
+            " args after '--' were passed as plugin-specific arguments."
+        )
+""",
+    }
+
+    with testing_context(files=files) as ctx:
+        stdout, stderr, exit_code = ctx.run(
+            additional_blender_args=["--python-use-system-env"],
+        )
+
+    assert exit_code == 0, f"pytest failed. STDERR:\n{stderr}"
+    assert (
+        "-b --python-use-system-env --python" in stdout
+    ), f"cli arguments propagation failed. STDOUT:\n{stdout}"
+
+
 def test_cli_env_propagation(testing_context):
     """Environment variables propagation."""
     custom_pyc_files_dirname = "custom_pyc_files_dir"
