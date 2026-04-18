@@ -1,4 +1,4 @@
-__version__ = "3.0.7"
+__version__ = "3.0.8"
 
 from pytest_blender.utils import (
     get_addons_dir,
